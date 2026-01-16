@@ -1,0 +1,15 @@
+{
+  "api_key": "",
+  "buy_amount": 0.01,
+  "slippage": 49,
+  "priority_fee": 0.001,
+  "num_attempts": 1,
+  "delay_between": 0.5,
+  "view_coin_x": 764,
+  "view_coin_y": 344,
+  "ca_area_x": 440,
+  "ca_area_y": 198,
+  "tesseract_path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+  "scan_interval": 0.15,
+  "chart_load_time": 2.5
+}
