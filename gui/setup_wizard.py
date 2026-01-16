@@ -21,13 +21,13 @@ class SetupWizard(ctk.CTkToplevel):
         self.result = {}
 
         self.title("PumpFun Sniper - Setup")
-        self.geometry("500x300")
+        self.geometry("500x250")
         self.resizable(False, False)
 
         # Center
         self.update_idletasks()
         x = (self.winfo_screenwidth() - 500) // 2
-        y = (self.winfo_screenheight() - 300) // 2
+        y = (self.winfo_screenheight() - 250) // 2
         self.geometry(f"+{x}+{y}")
 
         # Prevent closing
@@ -35,7 +35,9 @@ class SetupWizard(ctk.CTkToplevel):
         self.grab_set()
 
         self._create_widgets()
-        self._check_dependencies()
+
+        # Check dependencies after window is shown
+        self.after(100, self._check_dependencies)
 
     def _create_widgets(self):
         """Create widgets"""
@@ -96,7 +98,7 @@ class SetupWizard(ctk.CTkToplevel):
 
         # Buttons
         self.btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.btn_frame.pack(fill="x", padx=20, pady=20)
+        self.btn_frame.pack(fill="x", padx=20, pady=15)
 
         self.continue_btn = ctk.CTkButton(
             self.btn_frame,
@@ -107,59 +109,62 @@ class SetupWizard(ctk.CTkToplevel):
         self.continue_btn.pack(side="right", padx=5)
 
     def _check_dependencies(self):
-        """Check dependencies"""
+        """Check dependencies in background thread"""
         def check():
-            # Check Tesseract
-            tesseract_path = self.checker.find_tesseract()
-            if tesseract_path:
-                self.after(0, lambda: self._update_tesseract_status(True, tesseract_path))
-            else:
-                self.after(0, lambda: self._update_tesseract_status(False, None))
+            try:
+                # Check Tesseract
+                tesseract_path = self.checker.find_tesseract()
 
-            # Check if can continue
-            self.after(0, self._check_can_continue)
+                # Update UI from main thread
+                self.after(0, lambda: self._on_check_complete(tesseract_path))
+            except Exception as e:
+                print(f"Error checking dependencies: {e}")
+                self.after(0, lambda: self._on_check_complete(None))
 
         threading.Thread(target=check, daemon=True).start()
 
-    def _update_tesseract_status(self, installed: bool, path: Optional[str]):
-        """Update Tesseract status"""
-        if installed:
+    def _on_check_complete(self, tesseract_path: Optional[str]):
+        """Called when dependency check is complete"""
+        if tesseract_path:
             self.tesseract_status.configure(text="Installed", text_color="green")
             self.tesseract_btn.configure(state="disabled")
-            self.result["tesseract_path"] = path
+            self.result["tesseract_path"] = tesseract_path
+            self.continue_btn.configure(state="normal")
         else:
             self.tesseract_status.configure(text="Not found", text_color="red")
             self.tesseract_btn.configure(state="normal")
 
-    def _check_can_continue(self):
-        """Check if can continue"""
-        tesseract_ok = "tesseract_path" in self.result
-        if tesseract_ok:
-            self.continue_btn.configure(state="normal")
-
     def _install_tesseract(self):
         """Install Tesseract"""
         self.tesseract_btn.configure(state="disabled")
-        self.progress_label.configure(text="Downloading Tesseract...")
+        self.tesseract_status.configure(text="Installing...", text_color="orange")
+        self.progress_label.configure(text="Connecting to GitHub...")
 
         def on_progress(progress: float, status: str):
-            self.after(0, lambda: self.progress_bar.set(progress / 100))
-            self.after(0, lambda: self.progress_label.configure(text=status))
+            self.after(0, lambda p=progress, s=status: self._update_progress(p, s))
 
         def on_complete(success: bool):
-            if success:
-                self.after(0, lambda: self._update_tesseract_status(
-                    True,
-                    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-                ))
-                self.after(0, lambda: self.progress_label.configure(text="Tesseract installed!"))
-            else:
-                self.after(0, lambda: self.tesseract_btn.configure(state="normal"))
-                self.after(0, lambda: self.progress_label.configure(text="Installation failed"))
-
-            self.after(0, self._check_can_continue)
+            self.after(0, lambda: self._on_install_complete(success))
 
         self.tesseract_installer.download_and_install_async(on_progress, on_complete)
+
+    def _update_progress(self, progress: float, status: str):
+        """Update progress bar and label"""
+        self.progress_bar.set(progress / 100)
+        self.progress_label.configure(text=status)
+
+    def _on_install_complete(self, success: bool):
+        """Called when installation is complete"""
+        if success:
+            self.tesseract_status.configure(text="Installed", text_color="green")
+            self.tesseract_btn.configure(state="disabled")
+            self.progress_label.configure(text="Tesseract installed successfully!")
+            self.result["tesseract_path"] = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+            self.continue_btn.configure(state="normal")
+        else:
+            self.tesseract_status.configure(text="Failed", text_color="red")
+            self.tesseract_btn.configure(state="normal")
+            self.progress_label.configure(text="Installation failed. Try again.")
 
     def _on_continue(self):
         """Continue to main app"""
