@@ -1,5 +1,5 @@
 """
-Aba de calibracao de coordenadas com crosshair overlay
+Coordinate calibration tab with crosshair overlay
 """
 import customtkinter as ctk
 import tkinter as tk
@@ -11,12 +11,12 @@ from config.settings import Settings
 
 
 def windows_click(x: int, y: int):
-    """Simula clique do mouse no Windows usando ctypes"""
-    # Mover mouse para posicao
+    """Simulate mouse click on Windows using ctypes"""
+    # Move mouse to position
     ctypes.windll.user32.SetCursorPos(x, y)
     time.sleep(0.05)
 
-    # Simular clique (mouse down + mouse up)
+    # Simulate click (mouse down + mouse up)
     MOUSEEVENTF_LEFTDOWN = 0x0002
     MOUSEEVENTF_LEFTUP = 0x0004
 
@@ -26,7 +26,7 @@ def windows_click(x: int, y: int):
 
 
 class CrosshairOverlay(tk.Toplevel):
-    """Overlay para selecionar coordenadas na tela inteira"""
+    """Overlay for selecting coordinates on full screen"""
 
     def __init__(self, on_click: Callable[[int, int], None], on_cancel: Callable[[], None]):
         super().__init__()
@@ -35,19 +35,19 @@ class CrosshairOverlay(tk.Toplevel):
         self.on_cancel = on_cancel
         self.selected = False
 
-        # Pegar tamanho da tela
+        # Get screen size
         self.screen_w = self.winfo_screenwidth()
         self.screen_h = self.winfo_screenheight()
 
-        # Configurar janela fullscreen
-        self.title("Selecione a posicao - ESC para cancelar")
+        # Configure fullscreen window
+        self.title("Select position - ESC to cancel")
         self.geometry(f"{self.screen_w}x{self.screen_h}+0+0")
         self.attributes('-topmost', True)
-        self.attributes('-alpha', 0.4)  # Semi-transparente
+        self.attributes('-alpha', 0.4)  # Semi-transparent
         self.configure(bg='gray20')
-        self.overrideredirect(True)  # Remove bordas
+        self.overrideredirect(True)  # Remove borders
 
-        # Canvas para desenhar
+        # Canvas for drawing
         self.canvas = tk.Canvas(
             self,
             width=self.screen_w,
@@ -57,7 +57,7 @@ class CrosshairOverlay(tk.Toplevel):
         )
         self.canvas.pack()
 
-        # Texto de instrucao
+        # Instruction text
         self.canvas.create_rectangle(
             self.screen_w // 2 - 250, 30,
             self.screen_w // 2 + 250, 80,
@@ -65,7 +65,7 @@ class CrosshairOverlay(tk.Toplevel):
         )
         self.canvas.create_text(
             self.screen_w // 2, 55,
-            text="CLIQUE NO LOCAL DESEJADO | ESC = CANCELAR",
+            text="CLICK ON DESIRED LOCATION | ESC = CANCEL",
             fill='white',
             font=('Arial', 16, 'bold')
         )
@@ -74,7 +74,7 @@ class CrosshairOverlay(tk.Toplevel):
         self.h_line = self.canvas.create_line(0, 0, self.screen_w, 0, fill='red', width=2)
         self.v_line = self.canvas.create_line(0, 0, 0, self.screen_h, fill='red', width=2)
 
-        # Texto de coordenadas
+        # Coordinate text
         self.coord_bg = self.canvas.create_rectangle(0, 0, 0, 0, fill='black', outline='yellow')
         self.coord_text = self.canvas.create_text(0, 0, text="", fill='yellow', font=('Arial', 12, 'bold'), anchor='nw')
 
@@ -84,19 +84,19 @@ class CrosshairOverlay(tk.Toplevel):
         self.bind('<Escape>', self._on_escape)
         self.bind('<Button-3>', self._on_escape)  # Right click also cancels
 
-        # Focar
+        # Focus
         self.focus_force()
         self.grab_set()
 
     def _on_motion(self, event):
-        """Atualiza crosshair"""
+        """Update crosshair"""
         x, y = event.x, event.y
 
-        # Linhas do crosshair
+        # Crosshair lines
         self.canvas.coords(self.h_line, 0, y, self.screen_w, y)
         self.canvas.coords(self.v_line, x, 0, x, self.screen_h)
 
-        # Texto de coordenadas (ajustar posicao para nao sair da tela)
+        # Coordinate text (adjust position to not go off screen)
         text_x = x + 15 if x < self.screen_w - 120 else x - 115
         text_y = y - 25 if y > 30 else y + 15
 
@@ -105,7 +105,7 @@ class CrosshairOverlay(tk.Toplevel):
         self.canvas.itemconfig(self.coord_text, text=f"X: {x}  Y: {y}")
 
     def _on_click(self, event):
-        """Captura clique"""
+        """Capture click"""
         if self.selected:
             return
         self.selected = True
@@ -116,7 +116,7 @@ class CrosshairOverlay(tk.Toplevel):
         self.on_click_callback(x, y)
 
     def _on_escape(self, event=None):
-        """Cancela"""
+        """Cancel"""
         if self.selected:
             return
         self.selected = True
@@ -127,7 +127,7 @@ class CrosshairOverlay(tk.Toplevel):
 
 
 class CoordinatesTab(ctk.CTkFrame):
-    """Aba para calibrar coordenadas de clique"""
+    """Tab for calibrating click coordinates"""
 
     def __init__(self, parent, settings: Settings, on_save: Optional[Callable[[], None]] = None):
         super().__init__(parent)
@@ -138,25 +138,25 @@ class CoordinatesTab(ctk.CTkFrame):
         self._create_widgets()
 
     def _create_widgets(self):
-        """Cria widgets"""
-        # Titulo
+        """Create widgets"""
+        # Title
         title = ctk.CTkLabel(
             self,
-            text="Calibrar Coordenadas",
+            text="Calibrate Coordinates",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title.pack(pady=10)
 
-        # Instrucoes
+        # Instructions
         instructions = ctk.CTkLabel(
             self,
-            text="Clique em 'Selecionar na Tela' e depois clique no local desejado.\n"
-                 "Use 'Testar Clique' para verificar se a posicao esta correta.",
+            text="Click 'Select on Screen' and then click on the desired location.\n"
+                 "Use 'Test Click' to verify if the position is correct.",
             text_color="gray"
         )
         instructions.pack(pady=5)
 
-        # Frame principal
+        # Main frame
         main_frame = ctk.CTkFrame(self)
         main_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
@@ -166,13 +166,13 @@ class CoordinatesTab(ctk.CTkFrame):
 
         ctk.CTkLabel(
             vc_frame,
-            text="Botao 'View Coin'",
+            text="'View Coin' Button",
             font=ctk.CTkFont(size=16, weight="bold")
         ).pack(pady=5)
 
         ctk.CTkLabel(
             vc_frame,
-            text="Clique no botao View Coin da notificacao",
+            text="Click on the View Coin button from the notification",
             text_color="gray"
         ).pack()
 
@@ -192,7 +192,7 @@ class CoordinatesTab(ctk.CTkFrame):
 
         self.vc_select_btn = ctk.CTkButton(
             vc_btns,
-            text="Selecionar na Tela",
+            text="Select on Screen",
             command=self._select_view_coin,
             fg_color="green",
             hover_color="darkgreen",
@@ -202,7 +202,7 @@ class CoordinatesTab(ctk.CTkFrame):
 
         self.vc_test_btn = ctk.CTkButton(
             vc_btns,
-            text="Testar Clique",
+            text="Test Click",
             command=self._test_view_coin,
             width=120
         )
@@ -214,13 +214,13 @@ class CoordinatesTab(ctk.CTkFrame):
 
         ctk.CTkLabel(
             ca_frame,
-            text="Area do Contract Address",
+            text="Contract Address Area",
             font=ctk.CTkFont(size=16, weight="bold")
         ).pack(pady=5)
 
         ctk.CTkLabel(
             ca_frame,
-            text="Clique onde esta o CA para copiar",
+            text="Click where the CA is to copy it",
             text_color="gray"
         ).pack()
 
@@ -240,7 +240,7 @@ class CoordinatesTab(ctk.CTkFrame):
 
         self.ca_select_btn = ctk.CTkButton(
             ca_btns,
-            text="Selecionar na Tela",
+            text="Select on Screen",
             command=self._select_ca_area,
             fg_color="blue",
             hover_color="darkblue",
@@ -250,13 +250,13 @@ class CoordinatesTab(ctk.CTkFrame):
 
         self.ca_test_btn = ctk.CTkButton(
             ca_btns,
-            text="Testar Clique",
+            text="Test Click",
             command=self._test_ca_area,
             width=120
         )
         self.ca_test_btn.pack(side="left", padx=5)
 
-        # === Status e Salvar ===
+        # === Status and Save ===
         bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
         bottom_frame.pack(fill="x", padx=20, pady=10)
 
@@ -265,17 +265,17 @@ class CoordinatesTab(ctk.CTkFrame):
 
         self.save_btn = ctk.CTkButton(
             bottom_frame,
-            text="Salvar Coordenadas",
+            text="Save Coordinates",
             command=self._save,
             width=150
         )
         self.save_btn.pack(side="right")
 
-        # Carregar valores atuais
+        # Load current values
         self._load_values()
 
     def _load_values(self):
-        """Carrega valores das settings"""
+        """Load values from settings"""
         self.vc_x_entry.delete(0, "end")
         self.vc_x_entry.insert(0, str(self.settings.view_coin_x))
 
@@ -289,25 +289,25 @@ class CoordinatesTab(ctk.CTkFrame):
         self.ca_y_entry.insert(0, str(self.settings.ca_area_y))
 
     def _select_view_coin(self):
-        """Abre overlay para selecionar View Coin"""
-        self.status_label.configure(text="Selecione o botao View Coin...", text_color="orange")
+        """Open overlay to select View Coin"""
+        self.status_label.configure(text="Select the View Coin button...", text_color="orange")
 
-        # Minimizar janela principal
+        # Minimize main window
         self.winfo_toplevel().iconify()
         self.after(300, lambda: self._open_crosshair("view_coin"))
 
     def _select_ca_area(self):
-        """Abre overlay para selecionar CA Area"""
-        self.status_label.configure(text="Selecione a area do CA...", text_color="orange")
+        """Open overlay to select CA Area"""
+        self.status_label.configure(text="Select the CA area...", text_color="orange")
 
-        # Minimizar janela principal
+        # Minimize main window
         self.winfo_toplevel().iconify()
         self.after(300, lambda: self._open_crosshair("ca_area"))
 
     def _open_crosshair(self, mode: str):
-        """Abre crosshair overlay"""
+        """Open crosshair overlay"""
         def on_click(x, y):
-            # Restaurar janela principal
+            # Restore main window
             self.after(100, lambda: self.winfo_toplevel().deiconify())
             self.after(150, lambda: self.winfo_toplevel().lift())
 
@@ -333,56 +333,56 @@ class CoordinatesTab(ctk.CTkFrame):
         def on_cancel():
             self.after(100, lambda: self.winfo_toplevel().deiconify())
             self.after(150, lambda: self.winfo_toplevel().lift())
-            self.status_label.configure(text="Cancelado", text_color="gray")
+            self.status_label.configure(text="Cancelled", text_color="gray")
 
         CrosshairOverlay(on_click, on_cancel)
 
     def _test_view_coin(self):
-        """Testa clique no View Coin - simula clique do mouse"""
+        """Test click on View Coin - simulates mouse click"""
         try:
             x = int(self.vc_x_entry.get())
             y = int(self.vc_y_entry.get())
 
-            self.status_label.configure(text=f"Clicando em ({x}, {y})...", text_color="orange")
+            self.status_label.configure(text=f"Clicking on ({x}, {y})...", text_color="orange")
             self.update()
 
-            # Minimizar pra nao atrapalhar
+            # Minimize to not interfere
             self.winfo_toplevel().iconify()
             self.after(200, lambda: self._do_test_click(x, y))
 
         except ValueError:
-            self.status_label.configure(text="Erro: coordenadas invalidas", text_color="red")
+            self.status_label.configure(text="Error: invalid coordinates", text_color="red")
 
     def _test_ca_area(self):
-        """Testa clique na area do CA - simula clique do mouse"""
+        """Test click on CA area - simulates mouse click"""
         try:
             x = int(self.ca_x_entry.get())
             y = int(self.ca_y_entry.get())
 
-            self.status_label.configure(text=f"Clicando em ({x}, {y})...", text_color="orange")
+            self.status_label.configure(text=f"Clicking on ({x}, {y})...", text_color="orange")
             self.update()
 
-            # Minimizar pra nao atrapalhar
+            # Minimize to not interfere
             self.winfo_toplevel().iconify()
             self.after(200, lambda: self._do_test_click(x, y))
 
         except ValueError:
-            self.status_label.configure(text="Erro: coordenadas invalidas", text_color="red")
+            self.status_label.configure(text="Error: invalid coordinates", text_color="red")
 
     def _do_test_click(self, x: int, y: int):
-        """Executa o clique de teste"""
+        """Execute the test click"""
         windows_click(x, y)
 
-        # Restaurar janela apos o clique
+        # Restore window after click
         self.after(500, lambda: self.winfo_toplevel().deiconify())
         self.after(600, lambda: self.winfo_toplevel().lift())
         self.after(600, lambda: self.status_label.configure(
-            text=f"Clique enviado em ({x}, {y})",
+            text=f"Click sent to ({x}, {y})",
             text_color="green"
         ))
 
     def _save(self):
-        """Salva coordenadas"""
+        """Save coordinates"""
         try:
             self.settings.view_coin_x = int(self.vc_x_entry.get())
             self.settings.view_coin_y = int(self.vc_y_entry.get())
@@ -391,10 +391,10 @@ class CoordinatesTab(ctk.CTkFrame):
 
             self.settings.save()
 
-            self.status_label.configure(text="Coordenadas salvas!", text_color="green")
+            self.status_label.configure(text="Coordinates saved!", text_color="green")
 
             if self.on_save:
                 self.on_save()
 
         except ValueError:
-            self.status_label.configure(text="Erro: valores invalidos", text_color="red")
+            self.status_label.configure(text="Error: invalid values", text_color="red")

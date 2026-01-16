@@ -1,6 +1,6 @@
 """
-Sniper baseado em deteccao de pixel
-Monitora mudanca de cor no pixel do View Coin e executa compras
+Pixel-based sniper
+Monitors pixel color change on View Coin and executes buys
 """
 import asyncio
 import time
@@ -15,12 +15,12 @@ import subprocess
 from .api import PumpPortalAPI, BuyResult
 
 
-# Regex para CA Solana
+# Solana CA regex
 CA_PATTERN = re.compile(r'[1-9A-HJ-NP-Za-km-z]{32,44}')
 
 
 class SniperState(Enum):
-    """Estados do sniper"""
+    """Sniper states"""
     STOPPED = auto()
     MONITORING = auto()
     CLICKING_VIEW_COIN = auto()
@@ -30,20 +30,20 @@ class SniperState(Enum):
 
 
 def get_pixel_color(x: int, y: int) -> Tuple[int, int, int]:
-    """Captura cor de um pixel na tela"""
-    # Captura area 1x1 pixel
+    """Capture pixel color on screen"""
+    # Capture 1x1 pixel area
     img = ImageGrab.grab(bbox=(x, y, x + 1, y + 1))
     return img.getpixel((0, 0))
 
 
 def colors_different(c1: Tuple[int, int, int], c2: Tuple[int, int, int], tolerance: int = 10) -> bool:
-    """Verifica se duas cores sao diferentes (com tolerancia)"""
+    """Check if two colors are different (with tolerance)"""
     diff = abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
     return diff > tolerance
 
 
 def windows_click(x: int, y: int):
-    """Simula clique do mouse no Windows"""
+    """Simulate mouse click on Windows"""
     ctypes.windll.user32.SetCursorPos(x, y)
     time.sleep(0.02)
 
@@ -56,7 +56,7 @@ def windows_click(x: int, y: int):
 
 
 def get_clipboard() -> str:
-    """Le clipboard do Windows"""
+    """Read Windows clipboard"""
     try:
         result = subprocess.run(
             ["powershell", "-command", "Get-Clipboard"],
@@ -70,7 +70,7 @@ def get_clipboard() -> str:
 
 
 def clear_clipboard():
-    """Limpa o clipboard"""
+    """Clear clipboard"""
     try:
         subprocess.run(
             ["powershell", "-command", "Set-Clipboard -Value $null"],
@@ -82,7 +82,7 @@ def clear_clipboard():
 
 
 class Sniper:
-    """Sniper baseado em pixel detection"""
+    """Pixel detection based sniper"""
 
     def __init__(
         self,
@@ -96,9 +96,9 @@ class Sniper:
         view_coin_y: int = 344,
         ca_area_x: int = 440,
         ca_area_y: int = 198,
-        **kwargs  # Ignorar outros parametros
+        **kwargs  # Ignore other parameters
     ):
-        # Config de compra
+        # Buy config
         self.api_key = api_key
         self.buy_amount = buy_amount
         self.slippage = slippage
@@ -106,7 +106,7 @@ class Sniper:
         self.num_attempts = num_attempts
         self.delay_between = delay_between
 
-        # Coordenadas
+        # Coordinates
         self.view_coin_x = view_coin_x
         self.view_coin_y = view_coin_y
         self.ca_area_x = ca_area_x
@@ -115,7 +115,7 @@ class Sniper:
         # API
         self.api = PumpPortalAPI(api_key)
 
-        # Estado
+        # State
         self.state = SniperState.STOPPED
         self.bought_tokens: set = set()
         self._running = False
@@ -128,29 +128,29 @@ class Sniper:
         self.on_buy_result: Optional[Callable[[BuyResult], None]] = None
 
     def log(self, msg: str):
-        """Emite log"""
+        """Emit log"""
         print(msg)
         if self.on_log:
             self.on_log(msg)
 
     def set_state(self, state: SniperState):
-        """Muda estado"""
+        """Change state"""
         self.state = state
         if self.on_state_change:
             self.on_state_change(state)
 
     async def buy_token(self, mint: str):
-        """Executa compras"""
+        """Execute buys"""
         if mint in self.bought_tokens:
-            self.log(f"[SKIP] Token ja comprado: {mint}")
+            self.log(f"[SKIP] Token already bought: {mint}")
             return
 
         self.bought_tokens.add(mint)
         self.set_state(SniperState.BUYING)
 
         self.log("=" * 50)
-        self.log(f"CA DETECTADO: {mint}")
-        self.log(f"COMPRANDO: {self.num_attempts}x {self.buy_amount} SOL")
+        self.log(f"CA DETECTED: {mint}")
+        self.log(f"BUYING: {self.num_attempts}x {self.buy_amount} SOL")
         self.log("=" * 50)
 
         if self.on_ca_found:
@@ -167,39 +167,39 @@ class Sniper:
         )
 
         self.log("=" * 50)
-        self.log("COMPRAS FINALIZADAS")
+        self.log("BUYS COMPLETED")
         self.log("=" * 50)
 
         return results
 
     def _on_buy_result(self, result: BuyResult):
-        """Callback de resultado de compra"""
+        """Buy result callback"""
         if result.success:
             self.log(f"[{result.attempt}/{self.num_attempts}] OK - TX: {result.signature[:20]}...")
         else:
-            self.log(f"[{result.attempt}/{self.num_attempts}] ERRO: {result.error}")
+            self.log(f"[{result.attempt}/{self.num_attempts}] ERROR: {result.error}")
 
         if self.on_buy_result:
             self.on_buy_result(result)
 
     async def run(self):
-        """Loop principal"""
+        """Main loop"""
         self._running = True
         self.set_state(SniperState.MONITORING)
 
-        # Capturar cor base do pixel
+        # Capture base pixel color
         self.base_pixel_color = get_pixel_color(self.view_coin_x, self.view_coin_y)
 
         self.log("=" * 50)
-        self.log("SNIPER INICIADO")
+        self.log("SNIPER STARTED")
         self.log(f"View Coin: ({self.view_coin_x}, {self.view_coin_y})")
         self.log(f"CA Area: ({self.ca_area_x}, {self.ca_area_y})")
-        self.log(f"Pixel base: RGB{self.base_pixel_color}")
+        self.log(f"Base pixel: RGB{self.base_pixel_color}")
         self.log(f"Config: {self.num_attempts}x {self.buy_amount} SOL")
         self.log("=" * 50)
-        self.log("Monitorando mudanca de pixel...")
+        self.log("Monitoring pixel change...")
 
-        # Limpar clipboard antes de comecar
+        # Clear clipboard before starting
         clear_clipboard()
 
         scan_count = 0
@@ -208,39 +208,39 @@ class Sniper:
             try:
                 scan_count += 1
 
-                # Capturar cor atual do pixel
+                # Capture current pixel color
                 current_color = get_pixel_color(self.view_coin_x, self.view_coin_y)
 
-                # Verificar se mudou
+                # Check if changed
                 if colors_different(self.base_pixel_color, current_color, tolerance=15):
-                    self.log(f"[!] PIXEL MUDOU! {self.base_pixel_color} -> {current_color}")
+                    self.log(f"[!] PIXEL CHANGED! {self.base_pixel_color} -> {current_color}")
                     self.set_state(SniperState.CLICKING_VIEW_COIN)
 
-                    # Esperar 0.4s antes de clicar
-                    self.log("[*] Aguardando 0.4s...")
+                    # Wait 0.4s before clicking
+                    self.log("[*] Waiting 0.4s...")
                     await asyncio.sleep(0.4)
 
-                    # Clicar no View Coin
-                    self.log(f"[*] Clicando View Coin ({self.view_coin_x}, {self.view_coin_y})")
+                    # Click View Coin
+                    self.log(f"[*] Clicking View Coin ({self.view_coin_x}, {self.view_coin_y})")
                     windows_click(self.view_coin_x, self.view_coin_y)
 
-                    # Esperar 2.5s para carregar
+                    # Wait 2.5s for chart to load
                     self.set_state(SniperState.WAITING_CHART)
-                    self.log("[*] Aguardando 2.5s para grafico carregar...")
+                    self.log("[*] Waiting 2.5s for chart to load...")
                     await asyncio.sleep(2.5)
 
-                    # Limpar clipboard antes de copiar
+                    # Clear clipboard before copying
                     clear_clipboard()
 
-                    # Clicar 3x no CA com 1s de intervalo
+                    # Click 3x on CA with 1s interval
                     self.set_state(SniperState.COPYING_CA)
-                    self.log(f"[*] Clicando 3x no CA ({self.ca_area_x}, {self.ca_area_y})")
+                    self.log(f"[*] Clicking 3x on CA ({self.ca_area_x}, {self.ca_area_y})")
 
                     for i in range(3):
                         windows_click(self.ca_area_x, self.ca_area_y)
-                        self.log(f"    Clique {i+1}/3")
+                        self.log(f"    Click {i+1}/3")
 
-                        # Verificar clipboard apos cada clique
+                        # Check clipboard after each click
                         await asyncio.sleep(0.3)
                         clipboard = get_clipboard()
 
@@ -249,37 +249,37 @@ class Sniper:
                             if ca_match:
                                 ca = ca_match.group()
                                 if 32 <= len(ca) <= 44:
-                                    self.log(f"[+] CA encontrado: {ca}")
+                                    self.log(f"[+] CA found: {ca}")
                                     await self.buy_token(ca)
                                     break
 
                         if i < 2:
-                            await asyncio.sleep(0.7)  # Completar 1s
+                            await asyncio.sleep(0.7)  # Complete 1s
 
-                    # Atualizar cor base para proxima deteccao
+                    # Update base color for next detection
                     self.base_pixel_color = get_pixel_color(self.view_coin_x, self.view_coin_y)
-                    self.log(f"[*] Nova cor base: RGB{self.base_pixel_color}")
-                    self.log("[*] Voltando a monitorar...")
+                    self.log(f"[*] New base color: RGB{self.base_pixel_color}")
+                    self.log("[*] Returning to monitoring...")
                     self.set_state(SniperState.MONITORING)
 
-                # Log periodico
+                # Periodic log
                 if scan_count % 100 == 0:
                     self.log(f"[SCAN #{scan_count}] Pixel: RGB{current_color}")
 
-                # Intervalo entre scans (bem rapido)
+                # Interval between scans (very fast)
                 await asyncio.sleep(0.05)  # 50ms = 20 scans/sec
 
             except Exception as e:
-                self.log(f"[ERRO] {e}")
+                self.log(f"[ERROR] {e}")
                 await asyncio.sleep(0.5)
 
         self.set_state(SniperState.STOPPED)
 
     def stop(self):
-        """Para o sniper"""
+        """Stop the sniper"""
         self._running = False
-        self.log("[!] Parando sniper...")
+        self.log("[!] Stopping sniper...")
 
     def is_running(self) -> bool:
-        """Verifica se esta rodando"""
+        """Check if running"""
         return self._running

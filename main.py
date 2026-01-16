@@ -1,13 +1,13 @@
 """
 PumpFun Visual Sniper - Entry Point
-Verifica dependencias e inicia a aplicacao GUI
+Check dependencies and start GUI application
 """
 import sys
 import os
 
-# Adicionar diretorio ao path
+# Add directory to path
 if getattr(sys, 'frozen', False):
-    # Rodando como exe
+    # Running as exe
     BASE_DIR = os.path.dirname(sys.executable)
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +16,7 @@ sys.path.insert(0, BASE_DIR)
 
 
 def check_and_install_dependencies():
-    """Verifica e instala dependencias Python se necessario"""
+    """Check and install Python dependencies if needed"""
     required = [
         'customtkinter',
         'PIL',
@@ -40,46 +40,46 @@ def check_and_install_dependencies():
             missing.append(module)
 
     if missing:
-        print(f"Modulos faltando: {missing}")
-        print("Execute: pip install customtkinter pillow opencv-python numpy pytesseract aiohttp requests")
+        print(f"Missing modules: {missing}")
+        print("Run: pip install customtkinter pillow opencv-python numpy pytesseract aiohttp requests")
         return False
 
     return True
 
 
 def main():
-    """Funcao principal"""
-    # Verificar dependencias Python
+    """Main function"""
+    # Check Python dependencies
     if not check_and_install_dependencies():
-        input("Pressione Enter para sair...")
+        input("Press Enter to exit...")
         sys.exit(1)
 
-    # Importar modulos apos verificacao
+    # Import modules after check
     from installer.dependency_checker import DependencyChecker
     from config.settings import Settings, get_settings
 
-    # Verificar dependencias do sistema
+    # Check system dependencies
     checker = DependencyChecker()
     paths = checker.get_paths()
 
-    # Carregar ou criar settings
+    # Load or create settings
     settings = get_settings()
 
-    # Atualizar path do Tesseract se encontrado
+    # Update Tesseract path if found
     if paths["tesseract"] and not settings.tesseract_path:
         settings.tesseract_path = paths["tesseract"]
 
     settings.save()
 
-    # Verificar se Tesseract esta instalado
+    # Check if Tesseract is installed
     if not checker.is_tesseract_installed():
-        print("Tesseract OCR nao encontrado!")
-        print("O wizard de instalacao sera aberto...")
+        print("Tesseract OCR not found!")
+        print("Setup wizard will open...")
 
         import customtkinter as ctk
         from gui.setup_wizard import SetupWizard
 
-        # Criar janela root temporaria
+        # Create temporary root window
         root = ctk.CTk()
         root.withdraw()
 
@@ -92,10 +92,10 @@ def main():
         wizard = SetupWizard(root, on_wizard_complete)
         root.wait_window(wizard)
 
-        # Recarregar settings
+        # Reload settings
         settings = get_settings()
 
-    # Iniciar aplicacao principal
+    # Start main application
     from gui.app import App
 
     app = App(settings)

@@ -1,5 +1,5 @@
 """
-Baixa e instala Tesseract OCR automaticamente
+Download and install Tesseract OCR automatically
 """
 import os
 import subprocess
@@ -10,12 +10,12 @@ import requests
 
 
 class TesseractInstaller:
-    """Baixa e instala Tesseract OCR"""
+    """Download and install Tesseract OCR"""
 
-    # URL do instalador
+    # Installer URL
     DOWNLOAD_URL = "https://github.com/UB-Mannheim/tesseract/releases/download/v5.4.0.20240606/tesseract-ocr-w64-setup-5.4.0.20240606.exe"
     FILENAME = "tesseract-ocr-w64-setup-5.4.0.20240606.exe"
-    EXPECTED_SIZE = 50331648  # ~48MB aproximado
+    EXPECTED_SIZE = 50331648  # ~48MB approximate
 
     def __init__(self):
         self.download_progress: float = 0.0
@@ -30,14 +30,14 @@ class TesseractInstaller:
         on_progress: Optional[Callable[[float, str], None]] = None
     ) -> Optional[str]:
         """
-        Baixa o instalador do Tesseract
+        Download Tesseract installer
 
         Args:
-            dest_dir: Diretorio de destino (default: temp)
+            dest_dir: Destination directory (default: temp)
             on_progress: Callback(progress: 0-100, status: str)
 
         Returns:
-            Caminho do arquivo baixado ou None se falhou
+            Downloaded file path or None if failed
         """
         if dest_dir is None:
             dest_dir = tempfile.gettempdir()
@@ -54,7 +54,7 @@ class TesseractInstaller:
                 on_progress(progress, status)
 
         try:
-            update_status(0, "Conectando ao GitHub...")
+            update_status(0, "Connecting to GitHub...")
 
             response = requests.get(self.DOWNLOAD_URL, stream=True, timeout=30)
             response.raise_for_status()
@@ -63,27 +63,27 @@ class TesseractInstaller:
             if total_size == 0:
                 total_size = self.EXPECTED_SIZE
 
-            update_status(0, f"Baixando Tesseract ({total_size / 1024 / 1024:.1f} MB)...")
+            update_status(0, f"Downloading Tesseract ({total_size / 1024 / 1024:.1f} MB)...")
 
             downloaded = 0
             with open(dest_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if self._cancel_flag:
-                        update_status(0, "Download cancelado")
+                        update_status(0, "Download cancelled")
                         return None
 
                     if chunk:
                         f.write(chunk)
                         downloaded += len(chunk)
                         progress = (downloaded / total_size) * 100
-                        update_status(progress, f"Baixando... {downloaded / 1024 / 1024:.1f} MB")
+                        update_status(progress, f"Downloading... {downloaded / 1024 / 1024:.1f} MB")
 
-            update_status(100, "Download concluido!")
+            update_status(100, "Download complete!")
             self.is_downloading = False
             return dest_path
 
         except Exception as e:
-            update_status(0, f"Erro no download: {e}")
+            update_status(0, f"Download error: {e}")
             self.is_downloading = False
             return None
 
@@ -93,18 +93,18 @@ class TesseractInstaller:
         on_progress: Optional[Callable[[float, str], None]] = None
     ) -> bool:
         """
-        Executa instalacao silenciosa do Tesseract
+        Run silent Tesseract installation
 
         Args:
-            installer_path: Caminho do instalador .exe
+            installer_path: Path to installer .exe
             on_progress: Callback(progress: 0-100, status: str)
 
         Returns:
-            True se instalou com sucesso
+            True if installed successfully
         """
         if not os.path.exists(installer_path):
             if on_progress:
-                on_progress(0, "Arquivo instalador nao encontrado")
+                on_progress(0, "Installer file not found")
             return False
 
         self.is_installing = True
@@ -115,31 +115,31 @@ class TesseractInstaller:
                 on_progress(progress, status)
 
         try:
-            update_status(50, "Instalando Tesseract (pode demorar)...")
+            update_status(50, "Installing Tesseract (may take a while)...")
 
-            # Instalacao silenciosa
-            # /S = Silent, /D = Diretorio de instalacao
+            # Silent installation
+            # /S = Silent, /D = Installation directory
             result = subprocess.run(
                 [installer_path, "/S"],
                 capture_output=True,
-                timeout=300  # 5 minutos timeout
+                timeout=300  # 5 minutes timeout
             )
 
             if result.returncode == 0:
-                update_status(100, "Tesseract instalado com sucesso!")
+                update_status(100, "Tesseract installed successfully!")
                 self.is_installing = False
                 return True
             else:
-                update_status(0, f"Erro na instalacao (codigo {result.returncode})")
+                update_status(0, f"Installation error (code {result.returncode})")
                 self.is_installing = False
                 return False
 
         except subprocess.TimeoutExpired:
-            update_status(0, "Instalacao demorou demais (timeout)")
+            update_status(0, "Installation took too long (timeout)")
             self.is_installing = False
             return False
         except Exception as e:
-            update_status(0, f"Erro na instalacao: {e}")
+            update_status(0, f"Installation error: {e}")
             self.is_installing = False
             return False
 
@@ -148,15 +148,15 @@ class TesseractInstaller:
         on_progress: Optional[Callable[[float, str], None]] = None
     ) -> bool:
         """
-        Baixa e instala Tesseract em uma operacao
+        Download and install Tesseract in one operation
 
         Args:
             on_progress: Callback(progress: 0-100, status: str)
 
         Returns:
-            True se instalou com sucesso
+            True if installed successfully
         """
-        # Ajustar progresso para considerar download (0-50) e install (50-100)
+        # Adjust progress to consider download (0-50) and install (50-100)
         def download_progress(progress: float, status: str):
             if on_progress:
                 on_progress(progress / 2, status)
@@ -173,7 +173,7 @@ class TesseractInstaller:
         # Install
         success = self.install(installer_path, on_progress=install_progress)
 
-        # Limpar arquivo temporario
+        # Clean up temp file
         try:
             if os.path.exists(installer_path):
                 os.remove(installer_path)
@@ -188,7 +188,7 @@ class TesseractInstaller:
         on_complete: Optional[Callable[[bool], None]] = None
     ):
         """
-        Baixa e instala em thread separada
+        Download and install in separate thread
 
         Args:
             on_progress: Callback(progress: 0-100, status: str)
@@ -204,5 +204,5 @@ class TesseractInstaller:
         return thread
 
     def cancel(self):
-        """Cancela download em andamento"""
+        """Cancel download in progress"""
         self._cancel_flag = True

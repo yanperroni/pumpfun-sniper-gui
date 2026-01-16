@@ -1,5 +1,5 @@
 """
-Aba de configuracoes
+Settings tab
 """
 import customtkinter as ctk
 from typing import Callable, Optional
@@ -8,7 +8,7 @@ from config.settings import Settings
 
 
 class SettingsTab(ctk.CTkFrame):
-    """Aba de configuracoes do bot"""
+    """Bot settings tab"""
 
     def __init__(self, parent, settings: Settings, on_save: Optional[Callable[[], None]] = None):
         super().__init__(parent)
@@ -20,16 +20,16 @@ class SettingsTab(ctk.CTkFrame):
         self._load_values()
 
     def _create_widgets(self):
-        """Cria widgets"""
-        # Titulo
+        """Create widgets"""
+        # Title
         title = ctk.CTkLabel(
             self,
-            text="Configuracoes",
+            text="Settings",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title.pack(pady=10)
 
-        # Frame principal com scroll
+        # Main frame with scroll
         self.scroll_frame = ctk.CTkScrollableFrame(self, width=450, height=350)
         self.scroll_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
@@ -37,14 +37,14 @@ class SettingsTab(ctk.CTkFrame):
         api_frame = ctk.CTkFrame(self.scroll_frame)
         api_frame.pack(fill="x", pady=5)
 
-        ctk.CTkLabel(api_frame, text="API Key PumpPortal:", anchor="w").pack(fill="x", padx=5, pady=2)
+        ctk.CTkLabel(api_frame, text="PumpPortal API Key:", anchor="w").pack(fill="x", padx=5, pady=2)
         self.api_key_entry = ctk.CTkEntry(api_frame, width=400, show="*")
         self.api_key_entry.pack(fill="x", padx=5, pady=2)
 
         self.show_api_var = ctk.BooleanVar(value=False)
         show_api_cb = ctk.CTkCheckBox(
             api_frame,
-            text="Mostrar",
+            text="Show",
             variable=self.show_api_var,
             command=self._toggle_api_visibility,
             width=80
@@ -57,7 +57,7 @@ class SettingsTab(ctk.CTkFrame):
 
         ctk.CTkLabel(
             buy_frame,
-            text="Configuracoes de Compra",
+            text="Buy Settings",
             font=ctk.CTkFont(weight="bold")
         ).pack(fill="x", padx=5, pady=5)
 
@@ -92,7 +92,7 @@ class SettingsTab(ctk.CTkFrame):
         attempts_frame = ctk.CTkFrame(buy_frame, fg_color="transparent")
         attempts_frame.pack(fill="x", padx=5, pady=2)
 
-        ctk.CTkLabel(attempts_frame, text="Tentativas:", width=150, anchor="w").pack(side="left")
+        ctk.CTkLabel(attempts_frame, text="Attempts:", width=150, anchor="w").pack(side="left")
         self.attempts_entry = ctk.CTkEntry(attempts_frame, width=100)
         self.attempts_entry.pack(side="left", padx=5)
 
@@ -100,24 +100,24 @@ class SettingsTab(ctk.CTkFrame):
         delay_frame = ctk.CTkFrame(buy_frame, fg_color="transparent")
         delay_frame.pack(fill="x", padx=5, pady=2)
 
-        ctk.CTkLabel(delay_frame, text="Delay entre (seg):", width=150, anchor="w").pack(side="left")
+        ctk.CTkLabel(delay_frame, text="Delay Between (sec):", width=150, anchor="w").pack(side="left")
         self.delay_entry = ctk.CTkEntry(delay_frame, width=100)
         self.delay_entry.pack(side="left", padx=5)
 
         # Info pool=auto
         ctk.CTkLabel(
             buy_frame,
-            text="Pool: auto (fixo)",
+            text="Pool: auto (fixed)",
             text_color="gray"
         ).pack(fill="x", padx=5, pady=5)
 
-        # === Botao Salvar ===
+        # === Save Button ===
         btn_frame = ctk.CTkFrame(self, fg_color="transparent")
         btn_frame.pack(fill="x", padx=10, pady=10)
 
         self.save_btn = ctk.CTkButton(
             btn_frame,
-            text="Salvar Configuracoes",
+            text="Save Settings",
             command=self._save
         )
         self.save_btn.pack(side="right")
@@ -126,18 +126,18 @@ class SettingsTab(ctk.CTkFrame):
         self.status_label.pack(side="left", padx=10)
 
     def _toggle_api_visibility(self):
-        """Mostra/esconde API key"""
+        """Show/hide API key"""
         if self.show_api_var.get():
             self.api_key_entry.configure(show="")
         else:
             self.api_key_entry.configure(show="*")
 
     def _update_slippage_label(self, value):
-        """Atualiza label do slippage"""
+        """Update slippage label"""
         self.slippage_label.configure(text=f"{int(value)}%")
 
     def _load_values(self):
-        """Carrega valores das settings"""
+        """Load values from settings"""
         self.api_key_entry.delete(0, "end")
         self.api_key_entry.insert(0, self.settings.api_key)
 
@@ -157,7 +157,7 @@ class SettingsTab(ctk.CTkFrame):
         self.delay_entry.insert(0, str(self.settings.delay_between))
 
     def _save(self):
-        """Salva configuracoes"""
+        """Save settings"""
         try:
             self.settings.api_key = self.api_key_entry.get()
             self.settings.buy_amount = float(self.buy_amount_entry.get())
@@ -168,15 +168,15 @@ class SettingsTab(ctk.CTkFrame):
 
             self.settings.save()
 
-            self.status_label.configure(text="Salvo!", text_color="green")
+            self.status_label.configure(text="Saved!", text_color="green")
             self.after(2000, lambda: self.status_label.configure(text=""))
 
             if self.on_save:
                 self.on_save()
 
         except ValueError as e:
-            self.status_label.configure(text=f"Erro: valor invalido", text_color="red")
+            self.status_label.configure(text="Error: invalid value", text_color="red")
 
     def get_settings(self) -> Settings:
-        """Retorna settings atuais"""
+        """Return current settings"""
         return self.settings

@@ -1,5 +1,5 @@
 """
-Aplicacao principal com abas
+Main application with tabs
 """
 import customtkinter as ctk
 from typing import Optional
@@ -11,24 +11,24 @@ from .monitor_tab import MonitorTab
 
 
 class App(ctk.CTk):
-    """Janela principal da aplicacao"""
+    """Main application window"""
 
     def __init__(self, settings: Optional[Settings] = None):
         super().__init__()
 
-        # Configurar tema
+        # Configure theme
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
-        # Carregar settings
+        # Load settings
         self.settings = settings or get_settings()
 
-        # Configurar janela
+        # Configure window
         self.title("PumpFun Visual Sniper")
         self.geometry("550x680")
         self.minsize(500, 600)
 
-        # Centralizar
+        # Center window
         self.update_idletasks()
         x = (self.winfo_screenwidth() - 550) // 2
         y = (self.winfo_screenheight() - 680) // 2
@@ -37,7 +37,7 @@ class App(ctk.CTk):
         self._create_widgets()
 
     def _create_widgets(self):
-        """Cria widgets"""
+        """Create widgets"""
         # Header
         header = ctk.CTkFrame(self, height=50)
         header.pack(fill="x", padx=10, pady=5)
@@ -54,12 +54,12 @@ class App(ctk.CTk):
         self.tabview = ctk.CTkTabview(self)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=5)
 
-        # Adicionar abas
+        # Add tabs
         self.tabview.add("Monitor")
-        self.tabview.add("Configuracoes")
-        self.tabview.add("Coordenadas")
+        self.tabview.add("Settings")
+        self.tabview.add("Coordinates")
 
-        # Criar conteudo das abas
+        # Create tab content
         self.monitor_tab = MonitorTab(
             self.tabview.tab("Monitor"),
             self.settings
@@ -67,14 +67,14 @@ class App(ctk.CTk):
         self.monitor_tab.pack(fill="both", expand=True)
 
         self.settings_tab = SettingsTab(
-            self.tabview.tab("Configuracoes"),
+            self.tabview.tab("Settings"),
             self.settings,
             on_save=self._on_settings_saved
         )
         self.settings_tab.pack(fill="both", expand=True)
 
         self.coordinates_tab = CoordinatesTab(
-            self.tabview.tab("Coordenadas"),
+            self.tabview.tab("Coordinates"),
             self.settings,
             on_save=self._on_settings_saved
         )
@@ -92,10 +92,10 @@ class App(ctk.CTk):
         version.pack(side="right", padx=10)
 
     def _on_settings_saved(self):
-        """Callback quando settings sao salvas"""
-        # Recarregar settings no monitor
+        """Callback when settings are saved"""
+        # Reload settings in monitor
         self.monitor_tab.settings = self.settings
 
     def run(self):
-        """Executa a aplicacao"""
+        """Run the application"""
         self.mainloop()

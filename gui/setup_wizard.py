@@ -1,5 +1,5 @@
 """
-Wizard de configuracao inicial
+Initial setup wizard
 """
 import customtkinter as ctk
 import threading
@@ -10,7 +10,7 @@ from installer.tesseract_installer import TesseractInstaller
 
 
 class SetupWizard(ctk.CTkToplevel):
-    """Wizard para configurar dependencias na primeira execucao"""
+    """Wizard to configure dependencies on first run"""
 
     def __init__(self, parent, on_complete: Callable[[dict], None]):
         super().__init__(parent)
@@ -24,13 +24,13 @@ class SetupWizard(ctk.CTkToplevel):
         self.geometry("500x300")
         self.resizable(False, False)
 
-        # Centralizar
+        # Center
         self.update_idletasks()
         x = (self.winfo_screenwidth() - 500) // 2
         y = (self.winfo_screenheight() - 300) // 2
         self.geometry(f"+{x}+{y}")
 
-        # Impedir fechar
+        # Prevent closing
         self.protocol("WM_DELETE_WINDOW", lambda: None)
         self.grab_set()
 
@@ -38,16 +38,16 @@ class SetupWizard(ctk.CTkToplevel):
         self._check_dependencies()
 
     def _create_widgets(self):
-        """Cria widgets"""
-        # Titulo
+        """Create widgets"""
+        # Title
         self.title_label = ctk.CTkLabel(
             self,
-            text="Configuracao Inicial",
+            text="Initial Setup",
             font=ctk.CTkFont(size=24, weight="bold")
         )
         self.title_label.pack(pady=20)
 
-        # Frame de status
+        # Status frame
         self.status_frame = ctk.CTkFrame(self)
         self.status_frame.pack(fill="x", padx=20, pady=10)
 
@@ -65,21 +65,21 @@ class SetupWizard(ctk.CTkToplevel):
 
         self.tesseract_status = ctk.CTkLabel(
             self.tesseract_frame,
-            text="Verificando...",
+            text="Checking...",
             text_color="gray"
         )
         self.tesseract_status.pack(side="left", padx=5)
 
         self.tesseract_btn = ctk.CTkButton(
             self.tesseract_frame,
-            text="Instalar",
+            text="Install",
             width=80,
             state="disabled",
             command=self._install_tesseract
         )
         self.tesseract_btn.pack(side="right", padx=5)
 
-        # Barra de progresso
+        # Progress bar
         self.progress_frame = ctk.CTkFrame(self)
         self.progress_frame.pack(fill="x", padx=20, pady=10)
 
@@ -94,53 +94,53 @@ class SetupWizard(ctk.CTkToplevel):
         self.progress_bar.pack(pady=5)
         self.progress_bar.set(0)
 
-        # Botoes
+        # Buttons
         self.btn_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.btn_frame.pack(fill="x", padx=20, pady=20)
 
         self.continue_btn = ctk.CTkButton(
             self.btn_frame,
-            text="Continuar",
+            text="Continue",
             state="disabled",
             command=self._on_continue
         )
         self.continue_btn.pack(side="right", padx=5)
 
     def _check_dependencies(self):
-        """Verifica dependencias"""
+        """Check dependencies"""
         def check():
-            # Verificar Tesseract
+            # Check Tesseract
             tesseract_path = self.checker.find_tesseract()
             if tesseract_path:
                 self.after(0, lambda: self._update_tesseract_status(True, tesseract_path))
             else:
                 self.after(0, lambda: self._update_tesseract_status(False, None))
 
-            # Verificar se pode continuar
+            # Check if can continue
             self.after(0, self._check_can_continue)
 
         threading.Thread(target=check, daemon=True).start()
 
     def _update_tesseract_status(self, installed: bool, path: Optional[str]):
-        """Atualiza status do Tesseract"""
+        """Update Tesseract status"""
         if installed:
-            self.tesseract_status.configure(text="Instalado", text_color="green")
+            self.tesseract_status.configure(text="Installed", text_color="green")
             self.tesseract_btn.configure(state="disabled")
             self.result["tesseract_path"] = path
         else:
-            self.tesseract_status.configure(text="Nao encontrado", text_color="red")
+            self.tesseract_status.configure(text="Not found", text_color="red")
             self.tesseract_btn.configure(state="normal")
 
     def _check_can_continue(self):
-        """Verifica se pode continuar"""
+        """Check if can continue"""
         tesseract_ok = "tesseract_path" in self.result
         if tesseract_ok:
             self.continue_btn.configure(state="normal")
 
     def _install_tesseract(self):
-        """Instala Tesseract"""
+        """Install Tesseract"""
         self.tesseract_btn.configure(state="disabled")
-        self.progress_label.configure(text="Baixando Tesseract...")
+        self.progress_label.configure(text="Downloading Tesseract...")
 
         def on_progress(progress: float, status: str):
             self.after(0, lambda: self.progress_bar.set(progress / 100))
@@ -152,17 +152,17 @@ class SetupWizard(ctk.CTkToplevel):
                     True,
                     r"C:\Program Files\Tesseract-OCR\tesseract.exe"
                 ))
-                self.after(0, lambda: self.progress_label.configure(text="Tesseract instalado!"))
+                self.after(0, lambda: self.progress_label.configure(text="Tesseract installed!"))
             else:
                 self.after(0, lambda: self.tesseract_btn.configure(state="normal"))
-                self.after(0, lambda: self.progress_label.configure(text="Falha na instalacao"))
+                self.after(0, lambda: self.progress_label.configure(text="Installation failed"))
 
             self.after(0, self._check_can_continue)
 
         self.tesseract_installer.download_and_install_async(on_progress, on_complete)
 
     def _on_continue(self):
-        """Continua para app principal"""
+        """Continue to main app"""
         self.grab_release()
         self.destroy()
         self.on_complete(self.result)
